@@ -6,7 +6,7 @@ export default defineConfig({
   migrations: {
     path: 'prisma/migrations',
   },
-  // প্রিজমা ৭-এ datasource এর ভেতর সরাসরি 'url' এবং 'directUrl' ব্যবহার করুন
+
   datasource: {
     url: process.env.DATABASE_URL,
     shadowDatabaseUrl: process.env.SHADOW_DATABASE_URL,

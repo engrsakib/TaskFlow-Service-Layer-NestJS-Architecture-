@@ -1,13 +1,51 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider     = "postgresql"
+  relationMode = "prisma"
+}
+
+enum Role {
+  ADMIN
+  USER
+}
+
+enum Status {
+  PENDING
+  PROCESSING
+  DONE
+}
+
+model User {
+  id        Int        @id @default(autoincrement())
+  email     String     @unique
+  password  String
+  role      Role       @default(USER)
+  tasks     Task[]     @relation("UserTasks")
+  logs      AuditLog[]
+}
+
+model Task {
+  id          Int        @id @default(autoincrement())
+  title       String
+  description String?
+  status      Status     @default(PENDING)
+  userId      Int
+  user        User       @relation("UserTasks", fields: [userId], references: [id])
+  logs        AuditLog[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model AuditLog {
+  id           Int      @id @default(autoincrement())
+  actionType   String
+  actorId      Int
+  actor        User     @relation(fields: [actorId], references: [id])
+  taskId       Int?
+  task         Task?    @relation(fields: [taskId], references: [id])
+  details      Json
+  timestamp    DateTime @default(now())
 }

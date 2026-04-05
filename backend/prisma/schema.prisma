@@ -37,15 +37,20 @@ model Task {
   logs        AuditLog[]
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
+
+  @@index([userId]) 
 }
 
 model AuditLog {
-  id           Int      @id @default(autoincrement())
-  actionType   String
-  actorId      Int
-  actor        User     @relation(fields: [actorId], references: [id])
-  taskId       Int?
-  task         Task?    @relation(fields: [taskId], references: [id])
-  details      Json
-  timestamp    DateTime @default(now())
+  id          Int      @id @default(autoincrement())
+  actionType  String
+  actorId     Int
+  actor       User     @relation(fields: [actorId], references: [id])
+  taskId      Int?
+  task        Task?    @relation(fields: [taskId], references: [id])
+  details     Json
+  timestamp   DateTime @default(now())
+
+  @@index([actorId]) 
+  @@index([taskId])  
 }

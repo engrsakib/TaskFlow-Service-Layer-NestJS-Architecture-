@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ChangeRoleDto } from './dto/change-role.dto';
+import type { Prisma } from '@prisma/client';
 
 @Injectable()
 export class UsersService {
@@ -17,7 +18,7 @@ export class UsersService {
       },
     });
 
-    if (!user) throw new NotFoundException('User পাওয়া যায়নি');
+    if (!user) throw new NotFoundException('User not found');
 
     return user;
   }
@@ -27,6 +28,8 @@ export class UsersService {
       select: {
         id: true,
         email: true,
+        name: true,
+        phone: true,
         role: true,
       },
       orderBy: { id: 'desc' },
@@ -40,10 +43,13 @@ export class UsersService {
         id: true,
         email: true,
         role: true,
+        name: true,
+        phone: true,
       },
     });
 
-    if (!user) throw new NotFoundException('User পাওয়া যায়নি');
+    if (!user) throw new NotFoundException('User not found');
+    console.log(user);
 
     return user;
   }
@@ -51,19 +57,29 @@ export class UsersService {
   async update(id: number, dto: UpdateUserDto) {
     await this.ensureExists(id);
 
+    const data: Prisma.UserUpdateInput = {};
+
+    if (dto.email !== undefined) {
+      data.email = dto.email;
+    }
+
+    if (dto.name !== undefined) {
+      data.name = dto.name;
+    }
+
+    if (dto.phone !== undefined) {
+      data.phone = dto.phone;
+    }
+
     return this.prisma.user.update({
       where: { id },
-      data: {
-        ...(dto.email && { email: dto.email }),
-        ...(dto.name && { name: dto.name }),
-        ...(dto.phone && { phone: dto.phone }),
-      },
+      data,
       select: {
         id: true,
         email: true,
+        role: true,
         name: true,
         phone: true,
-        role: true,
       },
     });
   }
@@ -89,11 +105,11 @@ export class UsersService {
       where: { id },
     });
 
-    return { message: 'User সফলভাবে ডিলিট হয়েছে' };
+    return { message: 'User deleted successfully' };
   }
 
   private async ensureExists(id: number) {
     const exists = await this.prisma.user.findUnique({ where: { id } });
-    if (!exists) throw new NotFoundException('User পাওয়া যায়নি');
+    if (!exists) throw new NotFoundException('User not found');
   }
 }

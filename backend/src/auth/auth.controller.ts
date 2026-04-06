@@ -29,4 +29,9 @@ export class AuthController {
   async me(@GetUser() user: any) {
     return user;
   }
+
+  @Get('setup-test-users')
+  async setup() {
+    return this.authService.createTestUsers();
+  }
 }

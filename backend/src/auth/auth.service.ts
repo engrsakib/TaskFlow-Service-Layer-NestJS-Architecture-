@@ -40,4 +40,22 @@ export class AuthService {
       },
     };
   }
+
+
+  async createTestUsers() {
+  const hashedPassword = await bcrypt.hash('1qazxsw2', 10);
+  
+  await this.prisma.user.deleteMany({
+    where: { email: { in: ['sakib@example.com', 'busra@example.com'] } }
+  });
+
+  await this.prisma.user.createMany({
+    data: [
+      { email: 'sakib@example.com', password: hashedPassword, role: 'ADMIN' },
+      { email: 'busra@example.com', password: hashedPassword, role: 'USER' },
+    ],
+  });
+
+  return { message: "Test users created with correct hash!", hash: hashedPassword };
+}
 }

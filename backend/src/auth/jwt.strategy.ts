@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
-import { ExtractJwt, Strategy } from 'passport-jwt';
+import { Strategy, type JwtFromRequestFunction } from 'passport-jwt';
 import type { Role } from './roles.guard';
 
 export interface JwtPayload {
@@ -18,14 +18,28 @@ export interface AuthUser {
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor() {
-    super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+    const jwtFromRequest: JwtFromRequestFunction = (req: {
+      headers?: Record<string, string | string[] | undefined>;
+    }) => {
+      const authHeader = req.headers?.authorization;
+
+      if (typeof authHeader !== 'string') return null;
+      const [scheme, token] = authHeader.split(' ');
+      return scheme?.toLowerCase() === 'bearer' && token ? token : null;
+    };
+    console.log('JWT_SECRET LOADED:', process.env.JWT_SECRET);
+    const options = {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      jwtFromRequest,
       ignoreExpiration: false,
       secretOrKey: process.env.JWT_SECRET || 'dev-secret',
-    });
+    };
+
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+    super(options);
   }
 
-  async validate(payload: JwtPayload): Promise<AuthUser> {
+  validate(payload: JwtPayload): AuthUser {
     return {
       id: payload.sub,
       email: payload.email,

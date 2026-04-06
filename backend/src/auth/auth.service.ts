@@ -32,30 +32,32 @@ export class AuthService {
     const accessToken = await this.jwtService.signAsync(payload);
 
     return {
-      accessToken,
       user: {
         id: user.id,
         email: user.email,
         role: user.role,
       },
+      accessToken,
     };
   }
 
-
   async createTestUsers() {
-  const hashedPassword = await bcrypt.hash('1qazxsw2', 10);
-  
-  await this.prisma.user.deleteMany({
-    where: { email: { in: ['sakib@example.com', 'busra@example.com'] } }
-  });
+    const hashedPassword = await bcrypt.hash('1qazxsw2', 10);
 
-  await this.prisma.user.createMany({
-    data: [
-      { email: 'sakib@example.com', password: hashedPassword, role: 'ADMIN' },
-      { email: 'busra@example.com', password: hashedPassword, role: 'USER' },
-    ],
-  });
+    await this.prisma.user.deleteMany({
+      where: { email: { in: ['sakib@example.com', 'busra@example.com'] } },
+    });
 
-  return { message: "Test users created with correct hash!", hash: hashedPassword };
-}
+    await this.prisma.user.createMany({
+      data: [
+        { email: 'sakib@example.com', password: hashedPassword, role: 'ADMIN' },
+        { email: 'busra@example.com', password: hashedPassword, role: 'USER' },
+      ],
+    });
+
+    return {
+      message: 'Test users created with correct hash!',
+      hash: hashedPassword,
+    };
+  }
 }

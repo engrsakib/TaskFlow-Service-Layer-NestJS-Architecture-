@@ -54,11 +54,15 @@ export class UsersService {
     return this.prisma.user.update({
       where: { id },
       data: {
-        ...(dto.email ? { email: dto.email } : {}),
+        ...(dto.email && { email: dto.email }),
+        ...(dto.name && { name: dto.name }),
+        ...(dto.phone && { phone: dto.phone }),
       },
       select: {
         id: true,
         email: true,
+        name: true,
+        phone: true,
         role: true,
       },
     });

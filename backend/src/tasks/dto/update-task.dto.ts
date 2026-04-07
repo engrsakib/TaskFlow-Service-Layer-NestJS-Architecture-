@@ -1,16 +1,5 @@
-import { IsOptional, IsString, IsEnum } from 'class-validator';
-import { Status } from '@prisma/client';
+// dto/update-task.dto.ts
+import { PartialType } from '@nestjs/swagger';
+import { CreateTaskDto } from './create-task.dto';
 
-export class UpdateTaskDto {
-  @IsOptional()
-  @IsString()
-  title?: string;
-
-  @IsOptional()
-  @IsString()
-  description?: string;
-
-  @IsOptional()
-  @IsEnum(Status)
-  status?: Status;
-}
+export class UpdateTaskDto extends PartialType(CreateTaskDto) {}

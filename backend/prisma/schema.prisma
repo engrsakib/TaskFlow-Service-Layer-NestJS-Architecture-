@@ -18,6 +18,12 @@ enum Status {
   DONE
 }
 
+enum TaskStatus {
+  PENDING
+  PROCESSING
+  DONE
+}
+
 model User {
   id        Int        @id @default(autoincrement())
   name      String?

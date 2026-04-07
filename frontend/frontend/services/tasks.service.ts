@@ -38,7 +38,7 @@ export interface CreateTaskPayload {
   description: string;
   status: TaskStatus;
   priority: TaskPriority;
-  assigneeId: string;
+ assigneeId: number;
 }
 
 export interface UpdateTaskPayload {
@@ -46,7 +46,7 @@ export interface UpdateTaskPayload {
   description?: string;
   status?: TaskStatus;
   priority?: TaskPriority;
-  assigneeId?: string;
+ assigneeId?: number;
 }
 
 export interface TasksResponse {

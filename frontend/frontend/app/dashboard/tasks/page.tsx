@@ -377,7 +377,7 @@ export default function DashboardTasksPage() {
     setFormDescription("");
     setFormStatus("PENDING");
     setFormPriority("MEDIUM");
-    setFormAssigneeId(users[0]?.id || "");
+    setFormAssigneeId(users[0]?.id?.toString() || "");
     setActiveModal("create");
   };
 
@@ -389,7 +389,7 @@ export default function DashboardTasksPage() {
       setFormDescription(fullTask.description);
       setFormStatus(fullTask.status);
       setFormPriority(fullTask.priority);
-      setFormAssigneeId(fullTask.userId);
+      setFormAssigneeId(fullTask.userId.toString());
       setActiveModal("edit");
     } catch (error) {
       console.error("Failed to fetch task details:", error);
@@ -408,6 +408,12 @@ export default function DashboardTasksPage() {
       return;
     }
 
+      const assigneeIdNum = Number(formAssigneeId);
+      if (Number.isNaN(assigneeIdNum) || assigneeIdNum <= 0) {
+      showToast("error", "Invalid assignee selected");
+      return;
+    }
+
     setIsSaving(true);
     try {
       await tasksService.createTask({
@@ -415,7 +421,7 @@ export default function DashboardTasksPage() {
         description: formDescription.trim(),
         status: formStatus,
         priority: formPriority,
-        assigneeId: formAssigneeId,
+        assigneeId: assigneeIdNum,
       });
       showToast("success", "Task created successfully");
       closeModal();
@@ -434,6 +440,12 @@ export default function DashboardTasksPage() {
       return;
     }
 
+    const assigneeIdNum = Number(formAssigneeId);
+    if (Number.isNaN(assigneeIdNum) || assigneeIdNum <= 0) {
+      showToast("error", "Invalid assignee selected");
+      return;
+    }
+
     setIsSaving(true);
     try {
       await tasksService.updateTask(selectedTask.id, {
@@ -441,7 +453,7 @@ export default function DashboardTasksPage() {
         description: formDescription.trim(),
         status: formStatus,
         priority: formPriority,
-        assigneeId: formAssigneeId,
+        assigneeId: assigneeIdNum,
       });
       showToast("success", "Task updated successfully");
       closeModal();
@@ -718,7 +730,7 @@ export default function DashboardTasksPage() {
                   >
                     <option value="">Select assignee</option>
                     {users.map((user) => (
-                      <option key={user.id} value={user.id}>
+                        <option key={user.id} value={user.id?.toString()}>
                         {user.name || user.email}
                       </option>
                     ))}

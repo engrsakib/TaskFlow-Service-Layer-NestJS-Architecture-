@@ -8,6 +8,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { PaginationDto } from './dto/pagination.dto';
+// import { TaskPriority } from '@prisma/client';
 
 @Injectable()
 export class TasksService {
@@ -114,8 +115,8 @@ export class TasksService {
             taskId: id,
             details: {
               changedBy: userId,
-              oldValue: currentTask.priority,
-              newValue: dto.priority,
+              oldValue: String(currentTask.priority),
+              newValue: String(dto.priority),
             },
           },
         }),

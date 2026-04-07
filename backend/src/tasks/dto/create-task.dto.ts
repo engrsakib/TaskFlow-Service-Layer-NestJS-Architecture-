@@ -8,9 +8,11 @@ import {
   Min,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { Priority, Status } from '@prisma/client';
-import { TaskPriority } from './task-status.enum';
+import { Status, TaskPriority } from '@prisma/client';
+
+// Fix for Swagger + ESLint strict mode
+const StatusEnum = Object.values(Status);
+const TaskPriorityEnum = Object.values(TaskPriority);
 
 export class CreateTaskDto {
   @ApiProperty({ example: 'Fix Bug #123' })
@@ -23,12 +25,18 @@ export class CreateTaskDto {
   @IsString()
   description?: string;
 
-  @ApiPropertyOptional({ enum: Status, default: Status.PENDING })
+  @ApiPropertyOptional({
+    enum: StatusEnum,
+    default: Status.PENDING,
+  })
   @IsOptional()
   @IsEnum(Status)
   status?: Status;
 
-  @ApiPropertyOptional({ enum: TaskPriority, default: TaskPriority.MEDIUM })
+  @ApiPropertyOptional({
+    enum: TaskPriorityEnum,
+    default: TaskPriority.MEDIUM,
+  })
   @IsOptional()
   @IsEnum(TaskPriority)
   priority?: TaskPriority;

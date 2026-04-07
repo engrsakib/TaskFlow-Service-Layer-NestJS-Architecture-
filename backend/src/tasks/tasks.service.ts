@@ -1,31 +1,64 @@
 import {
+  BadRequestException,
   Injectable,
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
-import type { Prisma, Role, Task } from '@prisma/client';
+import {
+  Prisma,
+  type Role,
+  type Task,
+  type AuditLog,
+  Status,
+  TaskPriority,
+} from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { PaginationDto } from './dto/pagination.dto';
-// import { TaskPriority } from '@prisma/client';
 
 @Injectable()
 export class TasksService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(userId: number, dto: CreateTaskDto) {
-    const assigneeId = dto.assigneeId ?? userId;
+    const assignedUserId = dto.assigneeId ?? userId;
 
-    return this.prisma.task.create({
-      data: {
-        title: dto.title,
-        description: dto.description,
-        status: dto.status,
-        priority: dto.priority,
-        userId: assigneeId,
-      },
-    });
+    try {
+      return await this.prisma.task.create({
+        data: {
+          title: dto.title,
+          description: dto.description,
+          status: dto.status as Status,
+          priority: dto.priority as TaskPriority,
+          user: {
+            connect: { id: assignedUserId },
+          },
+        },
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          status: true,
+          priority: true,
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+    } catch (error: unknown) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        throw new BadRequestException('Invalid assignee or task data provided');
+      }
+
+      throw new BadRequestException('Unable to create task');
+    }
   }
 
   async findAll(userId: number, role: Role, pagination: PaginationDto) {
@@ -62,7 +95,7 @@ export class TasksService {
   }
 
   async update(id: number, userId: number, role: Role, dto: UpdateTaskDto) {
-    const currentTask = await this.findOne(id, userId, role);
+    const currentTask: Task = await this.findOne(id, userId, role);
 
     const data: Prisma.TaskUpdateInput = {};
 
@@ -80,44 +113,48 @@ export class TasksService {
         user: {
           select: {
             id: true,
+            name: true,
             email: true,
-            role: true,
           },
         },
       },
     });
 
-    const logWrites: Prisma.PrismaPromise<unknown>[] = [];
+    const logWrites: Prisma.PrismaPromise<AuditLog>[] = [];
 
     if (dto.status !== undefined && dto.status !== currentTask.status) {
+      const details: Prisma.JsonObject = {
+        changedBy: userId,
+        oldValue: currentTask.status,
+        newValue: dto.status,
+      };
+
       logWrites.push(
         this.prisma.auditLog.create({
           data: {
             actionType: 'TASK_STATUS_CHANGED',
             actorId: userId,
             taskId: id,
-            details: {
-              changedBy: userId,
-              oldValue: currentTask.status,
-              newValue: dto.status,
-            },
+            details,
           },
         }),
       );
     }
 
     if (dto.priority !== undefined && dto.priority !== currentTask.priority) {
+      const details: Prisma.JsonObject = {
+        changedBy: userId,
+        oldValue: String(currentTask.priority),
+        newValue: String(dto.priority),
+      };
+
       logWrites.push(
         this.prisma.auditLog.create({
           data: {
             actionType: 'TASK_PRIORITY_CHANGED',
             actorId: userId,
             taskId: id,
-            details: {
-              changedBy: userId,
-              oldValue: String(currentTask.priority),
-              newValue: String(dto.priority),
-            },
+            details,
           },
         }),
       );

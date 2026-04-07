@@ -307,7 +307,7 @@ export default function DashboardTasksPage() {
       try {
         setPaginating(page !== currentPage);
         const response = await tasksService.getTasks(page, 10);
-        
+
         // Ensure data is an array before setting
         if (Array.isArray(response.data)) {
           setTasks(response.data);
@@ -315,7 +315,7 @@ export default function DashboardTasksPage() {
           console.warn("Tasks data is not an array:", response.data);
           setTasks([]);
         }
-        
+
         setCurrentPage(response.page);
         setTotalPages(response.totalPages);
       } catch (error) {

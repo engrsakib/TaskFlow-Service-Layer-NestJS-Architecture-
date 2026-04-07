@@ -35,19 +35,19 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="flex min-h-screen bg-[radial-gradient(circle_at_15%_20%,rgba(34,211,238,0.08),transparent_35%),radial-gradient(circle_at_80%_0%,rgba(99,102,241,0.08),transparent_35%),linear-gradient(to_bottom,#020617,#09090b)] text-zinc-100">
+    <div className="flex min-h-screen bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-100">
       <Sidebar />
 
       <div className="flex min-w-0 flex-1 flex-col">
         <motion.div
           initial={{ opacity: 0, y: -16 }}
           animate={{ opacity: 1, y: 0 }}
-          className="sticky top-0 z-40 flex items-center justify-between border-b border-white/10 bg-slate-900/50 px-4 py-3 backdrop-blur-md md:hidden"
+          className="sticky top-0 z-40 flex items-center justify-between border-b border-slate-200/70 bg-slate-50/70 px-4 py-3 text-slate-900 backdrop-blur-md dark:border-white/10 dark:bg-slate-900/50 dark:text-slate-100 md:hidden"
         >
-          <span className="text-sm font-semibold text-zinc-100">TaskFlow Dashboard</span>
+          <span className="text-sm font-semibold">TaskFlow Dashboard</span>
           <button
             onClick={() => setIsSidebarOpen((prev) => !prev)}
-            className="rounded-lg border border-white/15 bg-white/5 p-2 text-zinc-100 transition hover:bg-white/10"
+            className="rounded-lg border border-slate-300/70 bg-white/70 p-2 text-slate-900 transition hover:bg-slate-100 dark:border-white/15 dark:bg-white/5 dark:text-slate-100 dark:hover:bg-white/10"
             aria-label="Toggle Sidebar"
           >
             {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
@@ -64,7 +64,11 @@ export default function DashboardLayout({
                 className="fixed inset-0 z-40 bg-black/45 md:hidden"
                 onClick={() => setIsSidebarOpen(false)}
               />
-              <Sidebar mobile mobileOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+              <Sidebar
+                mobile
+                mobileOpen={isSidebarOpen}
+                onClose={() => setIsSidebarOpen(false)}
+              />
             </>
           ) : null}
         </AnimatePresence>

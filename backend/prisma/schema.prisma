@@ -24,6 +24,12 @@ enum TaskStatus {
   DONE
 }
 
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
 model User {
   id        Int        @id @default(autoincrement())
   name      String?
@@ -41,6 +47,7 @@ model Task {
   title       String
   description String?
   status      Status     @default(PENDING)
+  priority    TaskPriority   @default(MEDIUM)
   userId      Int
   user        User       @relation("UserTasks", fields: [userId], references: [id])
   logs        AuditLog[]

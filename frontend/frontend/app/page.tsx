@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import {
   Bell,
   ChartLine,
@@ -74,32 +74,79 @@ const pricingTiers = [
   },
 ];
 
+const developerSkills = ["NestJS", "Go", "Python", "AI/ML"];
+
+const sectionVariants = {
+  hidden: { opacity: 0, y: 20 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.55, ease: "easeOut" as const },
+  },
+};
+
+const staggerContainer = {
+  hidden: { opacity: 0, y: 20 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.55,
+      ease: "easeOut" as const,
+      staggerChildren: 0.1,
+    },
+  },
+};
+
+const staggerItem = {
+  hidden: { opacity: 0, y: 16 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.4, ease: "easeOut" as const },
+  },
+};
+
 export default function Home() {
+  const shouldReduceMotion = useReducedMotion();
+
   return (
     <main className="relative flex-1 overflow-hidden bg-background text-foreground">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_20%,rgba(34,211,238,0.18),transparent_35%),radial-gradient(circle_at_80%_10%,rgba(99,102,241,0.12),transparent_32%),radial-gradient(circle_at_50%_75%,rgba(16,185,129,0.12),transparent_40%)] dark:bg-[radial-gradient(circle_at_15%_20%,rgba(56,189,248,0.18),transparent_35%),radial-gradient(circle_at_80%_10%,rgba(236,72,153,0.12),transparent_32%),radial-gradient(circle_at_50%_75%,rgba(16,185,129,0.12),transparent_40%)]" />
 
       <section className="relative mx-auto w-full max-w-6xl px-4 pt-20 pb-16 sm:px-6 lg:px-8 lg:pt-28">
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.65, ease: "easeOut" }}
-          className="max-w-3xl"
-        >
+        <div className="max-w-3xl">
           <p className="inline-flex rounded-full border border-border bg-surface px-4 py-1 text-xs font-semibold tracking-[0.18em] text-accent uppercase">
             AI-Driven Workflow Management
           </p>
-          <h1 className="mt-6 text-balance text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
+          <motion.h1
+            initial={shouldReduceMotion ? false : { opacity: 0, y: 22 }}
+            animate={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
+            transition={{ duration: 0.65, ease: "easeOut" }}
+            className="mt-6 text-balance text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl"
+          >
             Master Your Workflow, Amplify Productivity
-          </h1>
-          <p className="mt-6 max-w-2xl text-base leading-7 text-foreground/80 sm:text-lg sm:leading-8">
+          </motion.h1>
+          <motion.p
+            initial={shouldReduceMotion ? false : { opacity: 0, y: 18 }}
+            animate={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.08, ease: "easeOut" }}
+            className="mt-6 max-w-2xl text-base leading-7 text-foreground/80 sm:text-lg sm:leading-8"
+          >
             TaskFlow helps teams prioritize work, reduce delays, and execute
             projects with clarity using an intelligent task management
             experience.
-          </p>
+          </motion.p>
           <motion.div
-            animate={{ y: [0, -3, 0] }}
-            transition={{ duration: 2.4, repeat: Number.POSITIVE_INFINITY }}
+            whileHover={
+              shouldReduceMotion
+                ? undefined
+                : {
+                    scale: 1.02,
+                    boxShadow: "0 0 0 8px rgba(34, 211, 238, 0.08)",
+                  }
+            }
+            transition={{ duration: 0.25, ease: "easeOut" }}
             className="mt-8"
           >
             <Link
@@ -109,15 +156,15 @@ export default function Home() {
               Get Started
             </Link>
           </motion.div>
-        </motion.div>
+        </div>
       </section>
 
       <section className="relative mx-auto w-full max-w-6xl px-4 pb-16 sm:px-6 lg:px-8">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
+          variants={sectionVariants}
+          initial={shouldReduceMotion ? false : "hidden"}
+          whileInView={shouldReduceMotion ? undefined : "show"}
           viewport={{ once: true, amount: 0.25 }}
-          transition={{ duration: 0.55 }}
           className="rounded-3xl border border-border bg-surface p-6 shadow-sm sm:p-8"
         >
           <h2 className="text-2xl font-semibold sm:text-3xl">
@@ -136,20 +183,27 @@ export default function Home() {
         className="relative mx-auto w-full max-w-6xl px-4 pb-16 sm:px-6 lg:px-8 scroll-mt-24"
       >
         <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
+          variants={staggerContainer}
+          initial={shouldReduceMotion ? false : "hidden"}
+          whileInView={shouldReduceMotion ? undefined : "show"}
           viewport={{ once: true, amount: 0.25 }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
           className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3"
         >
-          {features.map((feature, index) => (
+          {features.map((feature) => (
             <motion.article
               key={feature.title}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.2 }}
-              transition={{ duration: 0.45, delay: index * 0.12 }}
-              className="rounded-2xl border border-border bg-surface p-6 shadow-sm"
+              variants={staggerItem}
+              whileHover={
+                shouldReduceMotion
+                  ? undefined
+                  : {
+                      y: -4,
+                      scale: 1.01,
+                      borderColor: "rgba(34, 211, 238, 0.55)",
+                    }
+              }
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              className="rounded-2xl border border-border bg-surface p-6 shadow-sm transition-colors"
             >
               <feature.icon className="mb-4 h-5 w-5 text-accent" />
               <h2 className="text-lg font-semibold">{feature.title}</h2>
@@ -163,10 +217,10 @@ export default function Home() {
 
       <section className="relative mx-auto w-full max-w-6xl px-4 pb-24 sm:px-6 lg:px-8">
         <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
+          variants={sectionVariants}
+          initial={shouldReduceMotion ? false : "hidden"}
+          whileInView={shouldReduceMotion ? undefined : "show"}
           viewport={{ once: true, amount: 0.2 }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
           className="grid gap-6 rounded-3xl border border-border bg-surface p-6 sm:p-8 lg:grid-cols-[1.2fr_1fr]"
         >
           <div>
@@ -196,10 +250,10 @@ export default function Home() {
 
       <section className="relative mx-auto w-full max-w-6xl px-4 pb-16 sm:px-6 lg:px-8">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
+          variants={sectionVariants}
+          initial={shouldReduceMotion ? false : "hidden"}
+          whileInView={shouldReduceMotion ? undefined : "show"}
           viewport={{ once: true, amount: 0.2 }}
-          transition={{ duration: 0.55 }}
           className="rounded-3xl border border-border bg-surface p-6 sm:p-8"
         >
           <h2 className="text-2xl font-semibold sm:text-3xl">Integrations</h2>
@@ -226,17 +280,34 @@ export default function Home() {
         className="relative mx-auto w-full max-w-6xl px-4 pb-16 sm:px-6 lg:px-8 scroll-mt-24"
       >
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
+          variants={sectionVariants}
+          initial={shouldReduceMotion ? false : "hidden"}
+          whileInView={shouldReduceMotion ? undefined : "show"}
           viewport={{ once: true, amount: 0.2 }}
-          transition={{ duration: 0.55 }}
         >
           <h2 className="text-2xl font-semibold sm:text-3xl">Pricing</h2>
-          <div className="mt-6 grid gap-4 md:grid-cols-3">
+          <motion.div
+            variants={staggerContainer}
+            initial={shouldReduceMotion ? false : "hidden"}
+            whileInView={shouldReduceMotion ? undefined : "show"}
+            viewport={{ once: true, amount: 0.2 }}
+            className="mt-6 grid gap-4 md:grid-cols-3"
+          >
             {pricingTiers.map((tier) => (
-              <article
+              <motion.article
                 key={tier.name}
-                className="rounded-2xl border border-border bg-surface p-6"
+                variants={staggerItem}
+                whileHover={
+                  shouldReduceMotion
+                    ? undefined
+                    : {
+                        y: -4,
+                        scale: 1.01,
+                        borderColor: "rgba(34, 211, 238, 0.55)",
+                      }
+                }
+                transition={{ duration: 0.2, ease: "easeOut" }}
+                className="rounded-2xl border border-border bg-surface p-6 transition-colors"
               >
                 <p className="text-sm font-semibold text-accent">{tier.name}</p>
                 <p className="mt-2 text-3xl font-bold">{tier.price}</p>
@@ -245,9 +316,9 @@ export default function Home() {
                     <li key={detail}>• {detail}</li>
                   ))}
                 </ul>
-              </article>
+              </motion.article>
             ))}
-          </div>
+          </motion.div>
         </motion.div>
       </section>
 
@@ -256,10 +327,10 @@ export default function Home() {
         className="relative mx-auto w-full max-w-6xl px-4 pb-16 sm:px-6 lg:px-8 scroll-mt-24"
       >
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
+          variants={sectionVariants}
+          initial={shouldReduceMotion ? false : "hidden"}
+          whileInView={shouldReduceMotion ? undefined : "show"}
           viewport={{ once: true, amount: 0.2 }}
-          transition={{ duration: 0.55 }}
           className="rounded-3xl border border-border bg-surface p-6 sm:p-8"
         >
           <p className="text-xs font-semibold tracking-[0.15em] text-accent uppercase">
@@ -275,6 +346,23 @@ export default function Home() {
             Python, and practical AI/ML solutions that deliver measurable
             business outcomes.
           </p>
+          <motion.div
+            variants={staggerContainer}
+            initial={shouldReduceMotion ? false : "hidden"}
+            whileInView={shouldReduceMotion ? undefined : "show"}
+            viewport={{ once: true, amount: 0.25 }}
+            className="mt-6 flex flex-wrap gap-2"
+          >
+            {developerSkills.map((skill) => (
+              <motion.span
+                key={skill}
+                variants={staggerItem}
+                className="inline-flex rounded-full border border-border bg-surface-muted px-3 py-1 text-xs font-medium text-foreground/85"
+              >
+                {skill}
+              </motion.span>
+            ))}
+          </motion.div>
         </motion.div>
       </section>
 

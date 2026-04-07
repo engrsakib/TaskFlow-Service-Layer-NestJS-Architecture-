@@ -22,7 +22,7 @@ export class TasksService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(userId: number, dto: CreateTaskDto) {
-    const assignedUserId = dto.assigneeId ?? userId;
+    const assignedUserId = Number(dto.assigneeId ?? userId);
 
     try {
       return await this.prisma.task.create({

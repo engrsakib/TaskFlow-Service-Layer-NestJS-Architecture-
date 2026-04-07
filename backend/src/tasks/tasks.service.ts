@@ -29,6 +29,63 @@ interface AuditDetails extends Prisma.JsonObject {
 export class TasksService {
   constructor(private readonly prisma: PrismaService) {}
 
+  // async create(userId: number, dto: CreateTaskDto) {
+  //   const assignedUserId = Number(dto.assigneeId ?? userId);
+
+  //   try {
+  //     return await this.prisma.$transaction(async (tx) => {
+  //       const task = await tx.task.create({
+  //         data: {
+  //           title: dto.title,
+  //           description: dto.description,
+  //           status: (dto.status as Status) ?? Status.PENDING,
+  //           priority: (dto.priority as TaskPriority) ?? TaskPriority.MEDIUM,
+  //           user: {
+  //             connect: { id: assignedUserId },
+  //           },
+  //         },
+  //         select: {
+  //           id: true,
+  //           title: true,
+  //           description: true,
+  //           status: true,
+  //           priority: true,
+  //           user: {
+  //             select: {
+  //               id: true,
+  //               name: true,
+  //               email: true,
+  //             },
+  //           },
+  //           createdAt: true,
+  //           updatedAt: true,
+  //         },
+  //       });
+
+  //       const details: AuditDetails = {
+  //         title: task.title,
+  //         assignedTo: assignedUserId,
+  //       };
+
+  //       await tx.auditLog.create({
+  //         data: {
+  //           actionType: 'TASK_CREATED',
+  //           actorId: userId,
+  //           taskId: task.id,
+  //           details: details as Prisma.InputJsonValue,
+  //         },
+  //       });
+
+  //       return task;
+  //     });
+  //   } catch (error: unknown) {
+  //     if (error instanceof Prisma.PrismaClientKnownRequestError) {
+  //       throw new BadRequestException('Invalid assignee or task data provided');
+  //     }
+
+  //     throw new BadRequestException('Unable to create task');
+  //   }
+  // }
   async create(userId: number, dto: CreateTaskDto) {
     const assignedUserId = Number(dto.assigneeId ?? userId);
 
@@ -43,22 +100,6 @@ export class TasksService {
             user: {
               connect: { id: assignedUserId },
             },
-          },
-          select: {
-            id: true,
-            title: true,
-            description: true,
-            status: true,
-            priority: true,
-            user: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-              },
-            },
-            createdAt: true,
-            updatedAt: true,
           },
         });
 
@@ -76,14 +117,34 @@ export class TasksService {
           },
         });
 
-        return task;
+        return await tx.task.findUnique({
+          where: { id: task.id },
+          select: {
+            id: true,
+            title: true,
+            description: true,
+            status: true,
+            priority: true,
+            user: {
+              select: { id: true, name: true, email: true },
+            },
+            createdAt: true,
+            updatedAt: true,
+          },
+        });
       });
     } catch (error: unknown) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError) {
-        throw new BadRequestException('Invalid assignee or task data provided');
-      }
+      console.error('CREATE ERROR:', error);
 
-      throw new BadRequestException('Unable to create task');
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2025') {
+          throw new BadRequestException(
+            `Assignee with ID ${assignedUserId} not found`,
+          );
+        }
+        throw new BadRequestException('Invalid task data provided');
+      }
+      throw new BadRequestException('Unable to create task and log');
     }
   }
 

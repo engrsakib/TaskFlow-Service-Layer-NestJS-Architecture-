@@ -1,6 +1,8 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Priority, Status } from '@prisma/client';
 import { IsEnum, IsInt, IsOptional, IsString, Min } from 'class-validator';
+import { TaskPriority } from './task-status.enum';
 
 export class UpdateTaskDto {
   @ApiPropertyOptional({ example: 'Fix Bug #123' })
@@ -18,10 +20,10 @@ export class UpdateTaskDto {
   @IsEnum(Status)
   status?: Status;
 
-  @ApiPropertyOptional({ enum: Priority, default: Priority.MEDIUM })
+  @ApiPropertyOptional({ enum: TaskPriority, default: TaskPriority.MEDIUM })
   @IsOptional()
-  @IsEnum(Priority)
-  priority?: Priority;
+  @IsEnum(TaskPriority)
+  priority?: TaskPriority;
 
   @ApiPropertyOptional({
     example: 2,

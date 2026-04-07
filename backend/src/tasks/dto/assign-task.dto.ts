@@ -6,5 +6,5 @@ export class AssignTaskDto {
   @ApiProperty({ example: 2, description: 'User ID to assign the task to' })
   @IsInt()
   @Min(1)
-  assigneeId: number;
+  assigneeId!: number;
 }

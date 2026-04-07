@@ -8,7 +8,6 @@ import {
   Prisma,
   type Role,
   type Task,
-  type AuditLog,
   Status,
   TaskPriority,
 } from '@prisma/client';
@@ -17,47 +16,135 @@ import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { PaginationDto } from './dto/pagination.dto';
 
+interface AuditDetails extends Prisma.JsonObject {
+  changedBy?: number;
+  field?: string;
+  oldValue?: string | number | null;
+  newValue?: string | number | null;
+  title?: string;
+  assignedTo?: number;
+}
+
 @Injectable()
 export class TasksService {
   constructor(private readonly prisma: PrismaService) {}
 
+  // async create(userId: number, dto: CreateTaskDto) {
+  //   const assignedUserId = Number(dto.assigneeId ?? userId);
+
+  //   try {
+  //     return await this.prisma.$transaction(async (tx) => {
+  //       const task = await tx.task.create({
+  //         data: {
+  //           title: dto.title,
+  //           description: dto.description,
+  //           status: (dto.status as Status) ?? Status.PENDING,
+  //           priority: (dto.priority as TaskPriority) ?? TaskPriority.MEDIUM,
+  //           user: {
+  //             connect: { id: assignedUserId },
+  //           },
+  //         },
+  //         select: {
+  //           id: true,
+  //           title: true,
+  //           description: true,
+  //           status: true,
+  //           priority: true,
+  //           user: {
+  //             select: {
+  //               id: true,
+  //               name: true,
+  //               email: true,
+  //             },
+  //           },
+  //           createdAt: true,
+  //           updatedAt: true,
+  //         },
+  //       });
+
+  //       const details: AuditDetails = {
+  //         title: task.title,
+  //         assignedTo: assignedUserId,
+  //       };
+
+  //       await tx.auditLog.create({
+  //         data: {
+  //           actionType: 'TASK_CREATED',
+  //           actorId: userId,
+  //           taskId: task.id,
+  //           details: details as Prisma.InputJsonValue,
+  //         },
+  //       });
+
+  //       return task;
+  //     });
+  //   } catch (error: unknown) {
+  //     if (error instanceof Prisma.PrismaClientKnownRequestError) {
+  //       throw new BadRequestException('Invalid assignee or task data provided');
+  //     }
+
+  //     throw new BadRequestException('Unable to create task');
+  //   }
+  // }
   async create(userId: number, dto: CreateTaskDto) {
     const assignedUserId = Number(dto.assigneeId ?? userId);
 
     try {
-      return await this.prisma.task.create({
-        data: {
-          title: dto.title,
-          description: dto.description,
-          status: dto.status as Status,
-          priority: dto.priority as TaskPriority,
-          user: {
-            connect: { id: assignedUserId },
-          },
-        },
-        select: {
-          id: true,
-          title: true,
-          description: true,
-          status: true,
-          priority: true,
-          user: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
+      return await this.prisma.$transaction(async (tx) => {
+        const task = await tx.task.create({
+          data: {
+            title: dto.title,
+            description: dto.description,
+            status: (dto.status as Status) ?? Status.PENDING,
+            priority: (dto.priority as TaskPriority) ?? TaskPriority.MEDIUM,
+            user: {
+              connect: { id: assignedUserId },
             },
           },
-          createdAt: true,
-          updatedAt: true,
-        },
+        });
+
+        const details: AuditDetails = {
+          title: task.title,
+          assignedTo: assignedUserId,
+        };
+
+        await tx.auditLog.create({
+          data: {
+            actionType: 'TASK_CREATED',
+            actorId: userId,
+            taskId: task.id,
+            details: details as Prisma.InputJsonValue,
+          },
+        });
+
+        return await tx.task.findUnique({
+          where: { id: task.id },
+          select: {
+            id: true,
+            title: true,
+            description: true,
+            status: true,
+            priority: true,
+            user: {
+              select: { id: true, name: true, email: true },
+            },
+            createdAt: true,
+            updatedAt: true,
+          },
+        });
       });
     } catch (error: unknown) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError) {
-        throw new BadRequestException('Invalid assignee or task data provided');
-      }
+      console.error('CREATE ERROR:', error);
 
-      throw new BadRequestException('Unable to create task');
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2025') {
+          throw new BadRequestException(
+            `Assignee with ID ${assignedUserId} not found`,
+          );
+        }
+        throw new BadRequestException('Invalid task data provided');
+      }
+      throw new BadRequestException('Unable to create task and log');
     }
   }
 
@@ -98,13 +185,118 @@ export class TasksService {
     const currentTask: Task = await this.findOne(id, userId, role);
 
     const data: Prisma.TaskUpdateInput = {};
+    const logWrites: Prisma.PrismaPromise<any>[] = [];
 
-    if (dto.title !== undefined) data.title = dto.title;
-    if (dto.description !== undefined) data.description = dto.description;
-    if (dto.status !== undefined) data.status = dto.status;
-    if (dto.priority !== undefined) data.priority = dto.priority;
-    if (dto.assigneeId !== undefined)
+    // 🔹 Title change (generic update log)
+    if (dto.title !== undefined && dto.title !== currentTask.title) {
+      data.title = dto.title;
+      const details: AuditDetails = {
+        field: 'title',
+        oldValue: String(currentTask.title),
+        newValue: String(dto.title),
+      };
+
+      logWrites.push(
+        this.prisma.auditLog.create({
+          data: {
+            actionType: 'TASK_UPDATED',
+            actorId: userId,
+            taskId: id,
+            details: details as Prisma.InputJsonValue,
+          },
+        }),
+      );
+    }
+
+    // 🔹 Description change (generic update log)
+    if (
+      dto.description !== undefined &&
+      dto.description !== currentTask.description
+    ) {
+      data.description = dto.description;
+      const details: AuditDetails = {
+        field: 'description',
+        oldValue: currentTask.description
+          ? String(currentTask.description)
+          : null,
+        newValue: String(dto.description),
+      };
+
+      logWrites.push(
+        this.prisma.auditLog.create({
+          data: {
+            actionType: 'TASK_UPDATED',
+            actorId: userId,
+            taskId: id,
+            details: details as Prisma.InputJsonValue,
+          },
+        }),
+      );
+    }
+
+    // 🔹 Status change
+    if (dto.status !== undefined && dto.status !== currentTask.status) {
+      data.status = dto.status;
+      const details: AuditDetails = {
+        changedBy: userId,
+        oldValue: String(currentTask.status),
+        newValue: String(dto.status),
+      };
+
+      logWrites.push(
+        this.prisma.auditLog.create({
+          data: {
+            actionType: 'TASK_STATUS_CHANGED',
+            actorId: userId,
+            taskId: id,
+            details: details as Prisma.InputJsonValue,
+          },
+        }),
+      );
+    }
+
+    // 🔹 Priority change
+    if (dto.priority !== undefined && dto.priority !== currentTask.priority) {
+      data.priority = dto.priority;
+      const details: AuditDetails = {
+        changedBy: userId,
+        oldValue: String(currentTask.priority),
+        newValue: String(dto.priority),
+      };
+
+      logWrites.push(
+        this.prisma.auditLog.create({
+          data: {
+            actionType: 'TASK_PRIORITY_CHANGED',
+            actorId: userId,
+            taskId: id,
+            details: details as Prisma.InputJsonValue,
+          },
+        }),
+      );
+    }
+
+    // 🔹 Assignee change
+    if (dto.assigneeId !== undefined && dto.assigneeId !== currentTask.userId) {
       data.user = { connect: { id: dto.assigneeId } };
+
+      const details: AuditDetails = {
+        changedBy: userId,
+        oldValue: currentTask.userId,
+        newValue: dto.assigneeId,
+      };
+
+      logWrites.push(
+        this.prisma.auditLog.create({
+          data: {
+            actionType: 'TASK_ASSIGNEE_CHANGED',
+            actorId: userId,
+            taskId: id,
+            details: details as Prisma.InputJsonValue,
+          },
+        }),
+      );
+    }
 
     const updatedTask = await this.prisma.task.update({
       where: { id },
@@ -120,46 +312,6 @@ export class TasksService {
       },
     });
 
-    const logWrites: Prisma.PrismaPromise<AuditLog>[] = [];
-
-    if (dto.status !== undefined && dto.status !== currentTask.status) {
-      const details: Prisma.JsonObject = {
-        changedBy: userId,
-        oldValue: currentTask.status,
-        newValue: dto.status,
-      };
-
-      logWrites.push(
-        this.prisma.auditLog.create({
-          data: {
-            actionType: 'TASK_STATUS_CHANGED',
-            actorId: userId,
-            taskId: id,
-            details,
-          },
-        }),
-      );
-    }
-
-    if (dto.priority !== undefined && dto.priority !== currentTask.priority) {
-      const details: Prisma.JsonObject = {
-        changedBy: userId,
-        oldValue: String(currentTask.priority),
-        newValue: String(dto.priority),
-      };
-
-      logWrites.push(
-        this.prisma.auditLog.create({
-          data: {
-            actionType: 'TASK_PRIORITY_CHANGED',
-            actorId: userId,
-            taskId: id,
-            details,
-          },
-        }),
-      );
-    }
-
     if (logWrites.length > 0) {
       await this.prisma.$transaction(logWrites);
     }
@@ -168,11 +320,28 @@ export class TasksService {
   }
 
   async remove(id: number, userId: number, role: Role) {
-    await this.findOne(id, userId, role);
+    const task = await this.findOne(id, userId, role);
 
-    return this.prisma.task.delete({
-      where: { id },
+    await this.prisma.$transaction(async (tx) => {
+      await tx.task.delete({
+        where: { id },
+      });
+
+      const details: AuditDetails = {
+        title: task.title,
+      };
+
+      await tx.auditLog.create({
+        data: {
+          actionType: 'TASK_DELETED',
+          actorId: userId,
+          taskId: id,
+          details: details as Prisma.InputJsonValue,
+        },
+      });
     });
+
+    return { message: 'Task deleted successfully' };
   }
 
   private async ensureExists(id: number): Promise<Task> {

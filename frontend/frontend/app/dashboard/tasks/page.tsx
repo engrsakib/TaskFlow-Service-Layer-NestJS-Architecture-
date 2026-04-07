@@ -306,10 +306,18 @@ export default function DashboardTasksPage() {
     async (page: number = 1) => {
       try {
         setPaginating(page !== currentPage);
-        const { data, pagination } = await tasksService.getTasks(page, 10);
-        setTasks(data);
-        setCurrentPage(pagination.page);
-        setTotalPages(pagination.totalPages);
+        const response = await tasksService.getTasks(page, 10);
+        
+        // Ensure data is an array before setting
+        if (Array.isArray(response.data)) {
+          setTasks(response.data);
+        } else {
+          console.warn("Tasks data is not an array:", response.data);
+          setTasks([]);
+        }
+        
+        setCurrentPage(response.page);
+        setTotalPages(response.totalPages);
       } catch (error) {
         console.error("Failed to fetch tasks:", error);
         showToast("error", "Failed to fetch tasks");
@@ -332,6 +340,12 @@ export default function DashboardTasksPage() {
 
   // Search filter
   const filteredTasks = useMemo(() => {
+    // Ensure tasks is an array before filtering
+    if (!Array.isArray(tasks)) {
+      console.warn("Tasks is not an array:", tasks);
+      return [];
+    }
+
     if (!search.trim()) return tasks;
 
     const lowerSearch = search.toLowerCase();
@@ -523,7 +537,7 @@ export default function DashboardTasksPage() {
               />
             ))}
           </div>
-        ) : filteredTasks.length === 0 ? (
+        ) : !Array.isArray(filteredTasks) || filteredTasks.length === 0 ? (
           <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/30 p-12 text-center">
             <p className="text-slate-600 dark:text-slate-400">
               {search ? "No tasks match your search" : "No tasks yet"}

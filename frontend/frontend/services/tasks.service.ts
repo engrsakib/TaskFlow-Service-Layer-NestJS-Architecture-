@@ -51,12 +51,10 @@ export interface UpdateTaskPayload {
 
 export interface TasksResponse {
   data: TaskItem[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
 }
 
 export const tasksService = {

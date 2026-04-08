@@ -408,8 +408,8 @@ export default function DashboardTasksPage() {
       return;
     }
 
-      const assigneeIdNum = Number(formAssigneeId);
-      if (Number.isNaN(assigneeIdNum) || assigneeIdNum <= 0) {
+    const assigneeIdNum = Number(formAssigneeId);
+    if (Number.isNaN(assigneeIdNum) || assigneeIdNum <= 0) {
       showToast("error", "Invalid assignee selected");
       return;
     }
@@ -730,7 +730,7 @@ export default function DashboardTasksPage() {
                   >
                     <option value="">Select assignee</option>
                     {users.map((user) => (
-                        <option key={user.id} value={user.id?.toString()}>
+                      <option key={user.id} value={user.id?.toString()}>
                         {user.name || user.email}
                       </option>
                     ))}

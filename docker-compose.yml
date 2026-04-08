@@ -1,0 +1,61 @@
+version: "3.8"
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${DB_USER:-taskflow}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-taskflow_password}
+      POSTGRES_DB: ${DB_NAME:-taskflow}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - taskflow-net
+
+  backend:
+    build:
+      context: ./backend
+    env_file:
+      - ./backend/.env
+    environment:
+      DATABASE_URL: postgresql://taskflow:taskflow_password@db:5432/taskflow
+    depends_on:
+      - db
+    expose:
+      - "4000"
+    networks:
+      - taskflow-net
+    restart: always
+
+  frontend:
+    build:
+      context: ./frontend
+    env_file:
+      - ./frontend/.env
+    environment:
+      NEXT_PUBLIC_API_URL: /api/v1
+    expose:
+      - "3000"
+    networks:
+      - taskflow-net
+    restart: always
+
+  nginx:
+    image: nginx:alpine
+    depends_on:
+      - frontend
+      - backend
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - taskflow-net
+    restart: always
+
+volumes:
+  postgres_data:
+
+networks:
+  taskflow-net:
+    name: taskflow-net

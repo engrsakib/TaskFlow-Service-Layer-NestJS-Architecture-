@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
+import axios from "axios";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ChevronDown,
@@ -69,6 +76,7 @@ export default function DashboardUsersPage() {
   const [editName, setEditName] = useState("");
   const [editPhone, setEditPhone] = useState("");
   const [roleValue, setRoleValue] = useState<"USER" | "ADMIN">("USER");
+  const [isSaving, setIsSaving] = useState(false);
   const [toasts, setToasts] = useState<ToastState[]>([]);
 
   const currentIsAdmin = normalizeRole(currentUser?.role || "") === "ADMIN";
@@ -80,6 +88,28 @@ export default function DashboardUsersPage() {
       setToasts((prev) => prev.filter((toast) => toast.id !== id));
     }, 2800);
   }, []);
+
+  const getUpdateErrorMessage = useCallback(
+    (
+      error: unknown,
+      fallbackMessage = "Something went wrong during update",
+    ) => {
+      if (axios.isAxiosError(error)) {
+        const message = error.response?.data?.message;
+
+        if (Array.isArray(message) && message.length > 0) {
+          return message[0];
+        }
+
+        if (typeof message === "string" && message.trim()) {
+          return message;
+        }
+      }
+
+      return fallbackMessage;
+    },
+    [],
+  );
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -163,6 +193,7 @@ export default function DashboardUsersPage() {
       return;
     }
 
+    setIsSaving(true);
     try {
       await usersService.updateUser(selectedUser.id, {
         name: editName.trim(),
@@ -171,8 +202,10 @@ export default function DashboardUsersPage() {
       showToast("success", "Profile updated successfully.");
       closeModal();
       await fetchUsers();
-    } catch {
-      showToast("error", "Failed to update profile.");
+    } catch (error) {
+      showToast("error", getUpdateErrorMessage(error));
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -184,13 +217,19 @@ export default function DashboardUsersPage() {
       return;
     }
 
+    setIsSaving(true);
     try {
       await usersService.updateUserRole(selectedUser.id, { role: roleValue });
       showToast("success", "User role updated successfully.");
       closeModal();
       await fetchUsers();
-    } catch {
-      showToast("error", "Failed to update role.");
+    } catch (error) {
+      showToast(
+        "error",
+        getUpdateErrorMessage(error, "Something went wrong during update"),
+      );
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -218,7 +257,8 @@ export default function DashboardUsersPage() {
             All Users
           </h1>
           <p className="max-w-2xl text-sm text-slate-600 dark:text-slate-300">
-            Search, update profiles, inspect details, manage roles, and delete users with administrative control.
+            Search, update profiles, inspect details, manage roles, and delete
+            users with administrative control.
           </p>
         </div>
 
@@ -401,9 +441,15 @@ export default function DashboardUsersPage() {
                   <h3 className="text-2xl font-semibold">User Details</h3>
                   <div className="grid gap-3 text-sm">
                     <DetailRow label="ID" value={selectedUser.id} />
-                    <DetailRow label="Name" value={selectedUser.name || "N/A"} />
+                    <DetailRow
+                      label="Name"
+                      value={selectedUser.name || "N/A"}
+                    />
                     <DetailRow label="Email" value={selectedUser.email} />
-                    <DetailRow label="Phone" value={selectedUser.phone || "N/A"} />
+                    <DetailRow
+                      label="Phone"
+                      value={selectedUser.phone || "N/A"}
+                    />
                     <DetailRow label="Role" value={selectedUser.role} />
                   </div>
                 </div>
@@ -432,9 +478,11 @@ export default function DashboardUsersPage() {
                   </div>
                   <button
                     onClick={handleUpdate}
+                    disabled={isSaving}
                     className="inline-flex w-full items-center justify-center rounded-2xl bg-cyan-500 px-4 py-3 text-sm font-semibold text-zinc-950 transition hover:bg-cyan-400"
+                    aria-busy={isSaving}
                   >
-                    Save Changes
+                    {isSaving ? "Saving..." : "Save Changes"}
                   </button>
                 </div>
               ) : null}
@@ -462,10 +510,11 @@ export default function DashboardUsersPage() {
                   </Field>
                   <button
                     onClick={handleRoleUpdate}
-                    disabled={!currentIsAdmin}
+                    disabled={!currentIsAdmin || isSaving}
                     className="inline-flex w-full items-center justify-center rounded-2xl bg-cyan-500 px-4 py-3 text-sm font-semibold text-zinc-950 transition hover:bg-cyan-400 disabled:cursor-not-allowed disabled:opacity-60"
+                    aria-busy={isSaving}
                   >
-                    Update Role
+                    {isSaving ? "Saving..." : "Update Role"}
                   </button>
                 </div>
               ) : null}
@@ -474,7 +523,7 @@ export default function DashboardUsersPage() {
                 <div className="space-y-5">
                   <h3 className="text-2xl font-semibold">Delete User</h3>
                   <p className="text-sm leading-6 text-slate-600 dark:text-slate-300">
-                    Are you sure you want to delete{' '}
+                    Are you sure you want to delete{" "}
                     <span className="font-semibold text-slate-900 dark:text-slate-100">
                       {selectedUser.name || selectedUser.email}
                     </span>
@@ -524,13 +573,7 @@ export default function DashboardUsersPage() {
   );
 }
 
-function Field({
-  label,
-  children,
-}: {
-  label: string;
-  children: ReactNode;
-}) {
+function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
     <label className="block space-y-2 text-sm font-medium text-slate-700 dark:text-slate-300">
       <span>{label}</span>
@@ -543,10 +586,9 @@ function DetailRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-start justify-between gap-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-white/10 dark:bg-slate-900/60">
       <span className="text-slate-500 dark:text-slate-400">{label}</span>
-      <span className="text-right font-medium text-slate-900 dark:text-slate-100">{value}</span>
+      <span className="text-right font-medium text-slate-900 dark:text-slate-100">
+        {value}
+      </span>
     </div>
   );
 }
-
-
-

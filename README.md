@@ -43,7 +43,13 @@ A modern full-stack task management platform built for teams that need speed, ac
 - PostgreSQL
 - Prisma ORM
 
-## Getting Started (Local Setup)
+## 🚀 Quick Start with Docker
+
+### Prerequisites
+
+- Docker & Docker Compose installed
+
+### Steps
 
 ### 1. Clone the repository
 
@@ -52,75 +58,25 @@ git clone https://github.com/engrsakib/TaskFlow-Service-Layer-NestJS-Architectur
 cd TaskFlow-Service-Layer-NestJS-Architecture-
 ```
 
-### 2. Configure environment variables
+### 2. Open terminal in the root directory
 
-Create a `.env` file in both `backend/` and `frontend/`.
+Make sure your terminal is inside the project root where `docker-compose.yml` exists.
 
-#### `backend/.env`
-
-```env
-PORT=4000
-DATABASE_URL="postgresql://<db_user>:<db_password>@localhost:5432/taskflow"
-SHADOW_DATABASE_URL="postgresql://<db_user>:<db_password>@localhost:5432/taskflow_shadow"
-CORS_ORIGINS=http://localhost:3000
-JWT_SECRET=<your_super_secret_jwt_key>
-```
-
-#### `frontend/.env`
-
-```env
-BASE_URL=http://localhost:4000/api/v1/
-NEXT_PUBLIC_BASE_URL=http://localhost:4000/api/v1/
-```
-
-### 3. Install dependencies
-
-```bash
-cd backend
-npm install
-
-cd ../frontend
-npm install
-```
-
-### 4. Run the app in development mode
-
-Use two terminals:
-
-```bash
-# Terminal 1
-cd backend
-npm run start:dev
-
-# Terminal 2
-cd frontend
-npm run dev
-```
-
-App URLs:
-
-- Frontend: `http://localhost:3000`
-- Backend: `http://localhost:4000`
-- Swagger Docs: `http://localhost:4000/api/docs`
-
-## Docker Setup (Recommended)
-
-Run the following from the project root:
+### 3. Build and run containers
 
 ```bash
 docker-compose up --build
 ```
 
-This command builds and starts the full stack automatically:
+### Access Info
 
-- PostgreSQL database
-- NestJS backend service
-- Next.js frontend service
+- App: `http://localhost`
+- Swagger Docs: `http://localhost/api/docs`
+- API Base: `http://localhost/api/v1`
 
-Once containers are up, open:
+### Environment Note
 
-- Frontend: `http://localhost:3000`
-- Backend API: `http://localhost:4000`
+The required `.env` files are already configured for Docker inside `backend/` and `frontend/`.
 
 ## Test Credentials (Important)
 
